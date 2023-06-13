@@ -1,0 +1,9 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+
+Files: .vscode/*
+Copyright: 2023 Mitsubishi Electric Research Laboratories (MERL)
+License: MIT
+
+Files: images/smart101-banner2.png dataset/*.csv dataset/*.txt
+Copyright: 2023 Mitsubishi Electric Research Laboratories (MERL)
+License: MIT
