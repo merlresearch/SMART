@@ -398,7 +398,9 @@ def get_puzzle_ids(args):
         puzzle_ids = puzzles[args.puzzles]
         puzzle_ids_str = args.puzzles
     else:
-        puzzle_ids = args.puzzle.split(",")
+        puzzle_ids = args.puzzles.split(",")
+        sorted_puzzle_ids = np.sort(np.array([int(ii) for ii in puzzle_ids]))
+        puzzle_ids = [str(ii) for ii in sorted_puzzle_ids]
         puzzle_ids_str = "_".join(puzzle_ids)
 
     if args.monolithic:

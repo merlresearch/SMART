@@ -14,6 +14,7 @@ import pdb
 import pickle
 
 import clip
+import numpy as np
 import torch.nn.functional as F
 from PIL import Image
 from torchvision import models
@@ -40,6 +41,7 @@ class SMART_VL_Net(nn.Module):
         self.monolithic = args.monolithic
         self.use_single_image_head = args.use_single_image_head
         self.train_backbone = args.train_backbone
+        self.sorted_puzzle_ids = np.sort(np.array([int(ii) for ii in args.puzzle_ids]))
 
         if args.loss_type == "classifier" or args.loss_type == "puzzle_tails":
             self.max_val = gv.MAX_VAL + 1
@@ -96,7 +98,11 @@ class SMART_VL_Net(nn.Module):
         ans_decoder = [
             nn.Sequential(nn.Linear(self.out_dim, 1))
         ]  # start with a dummy as we are 1-indexed wrt puzzle ids.
-        for pid in range(1, gv.num_puzzles + 1):
+        if args.puzzles == "all":
+            puzzles = range(1, gv.num_puzzles + 1)
+        else:
+            puzzles = self.puzzle_ids
+        for pid in puzzles:  # self.puzzle_ids:
             num_classes = gv.NUM_CLASSES_PER_PUZZLE[str(pid)] if args.loss_type == "classifier" else 1
             if int(pid) not in gv.SEQ_PUZZLES:
                 ans_decoder.append(
@@ -177,10 +183,11 @@ class SMART_VL_Net(nn.Module):
         for t in range(len(upids)):
             idx = pids == upids[t]
             key = str(upids[t].item())
+            key_idx = np.where(int(key) == np.array(self.sorted_puzzle_ids))[0][0] + 1  # +1 because we use 1-indexed.
             if upids[t] not in gv.SEQ_PUZZLES:
-                out_feats[key] = self.ans_decoder[int(key)](feat[idx])
+                out_feats[int(key)] = self.ans_decoder[key_idx](feat[idx])
             else:
-                out_feats[key] = self.seq_decoder(self.ans_decoder[int(key)], feat[idx])
+                out_feats[int(key)] = self.seq_decoder(self.ans_decoder[key_idx], feat[idx])
         return out_feats
 
     def forward(self, im, q=None, puzzle_ids=None):
@@ -231,6 +238,7 @@ class SMART_Net(nn.Module):
         self.use_single_image_head = args.use_single_image_head
         self.train_backbone = args.train_backbone
         self.word_embed = args.word_embed
+        self.sorted_puzzle_ids = np.sort(np.array([int(ii) for ii in args.puzzle_ids]))
 
         if args.loss_type == "classifier" or args.loss_type == "puzzle_tails":
             self.max_val = gv.MAX_VAL + 1
@@ -340,7 +348,11 @@ class SMART_Net(nn.Module):
         ans_decoder = [
             nn.Sequential(nn.Linear(self.out_dim, 1))
         ]  # start with a dummy as we are 1-indexed wrt puzzle ids.
-        for pid in range(1, gv.num_puzzles + 1):  # self.puzzle_ids:
+        if args.puzzles == "all":
+            puzzles = range(1, gv.num_puzzles + 1)
+        else:
+            puzzles = self.puzzle_ids
+        for pid in puzzles:  # self.puzzle_ids:
             num_classes = gv.NUM_CLASSES_PER_PUZZLE[str(pid)] if args.loss_type == "classifier" else 1
             if int(pid) not in gv.SEQ_PUZZLES:
                 ans_decoder.append(
@@ -445,10 +457,11 @@ class SMART_Net(nn.Module):
         for t in range(len(upids)):
             idx = pids == upids[t]
             key = str(upids[t].item())
+            key_idx = np.where(int(key) == np.array(self.sorted_puzzle_ids))[0][0] + 1  # +1 because we use 1-indexed.
             if upids[t] not in gv.SEQ_PUZZLES:
-                out_feats[key] = self.ans_decoder[int(key)](feat[idx])
+                out_feats[int(key)] = self.ans_decoder[key_idx](feat[idx])
             else:
-                out_feats[key] = self.seq_decoder(self.ans_decoder[int(key)], feat[idx])
+                out_feats[int(key)] = self.seq_decoder(self.ans_decoder[key_idx], feat[idx])
         return out_feats
 
     def forward(self, im, q=None, puzzle_ids=None):
